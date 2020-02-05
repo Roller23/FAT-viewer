@@ -918,23 +918,3 @@ static void handleCommand(char *command) {
   }
   printf("  Unknown command '%s', type help for a list of available commands\n", first);
 }
-
-struct Point {
-  int x;
-  int y;
-};
-
-struct Triangle /* extends Point */ {
-  struct Point p1;
-  struct Point p2;
-  struct Point p3;
-};
-
-struct Point newPoint(int x, int y) {
-  return (struct Point){x, y};
-}
-
-int main(void) {
-  struct Point dot = newPoint(3, 5);
-  return 0;
-}

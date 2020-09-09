@@ -117,6 +117,7 @@ struct global_data_t {
   struct _FileEntry *historyBackup[MAX_DEPTH];
   uint32_t historyIndex;
   uint32_t historyIndexBackup;
+  const char *diskFilename;
 };
 
 typedef struct _FileEntry FileEntry_t;

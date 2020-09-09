@@ -1,8 +1,15 @@
 #include "FAT.h"
+#include <libgen.h>
+#include <unistd.h>
+
+#define CYAN "\033[36m"
+#define GREEN  "\x1B[32m"
+#define RESET "\x1B[0m"
 
 static struct global_data_t global_data;
 
 int loadDiskImage(const char *name) {
+  global_data.diskFilename = basename((char *)name);
   FILE *diskFile = fopen(name, "rb");
   if (diskFile == NULL) {
     printf("Couldn't open %s\n", name);
@@ -98,7 +105,9 @@ void initGUI(void) {
   printf("Type 'help' for a list of available commands\n");
   while (true) {
     memset(buffer, 0, BUFFER_SIZE);
-    printf("> ");
+    printf(GREEN "%s" RESET ":" CYAN, global_data.diskFilename);
+    printCurrentDirectory();
+    printf(RESET "> ");
     fgets(buffer, BUFFER_SIZE, stdin);
     uint32_t length = strlen(buffer);
     if (buffer[length - 1] == '\n') {
@@ -698,7 +707,7 @@ static void handleCommand(char *command) {
     global_data.directoryHistory[global_data.historyIndex] = directory;
     return;
   }
-  if (strcmp("dir", first) == 0 || strcmp("ls", first) == 0) {
+  if (strcmp("ls", first) == 0) {
     showDirectoryContents(getCurrentDir(), 1, false);
     return;
   }
@@ -831,7 +840,7 @@ static void handleCommand(char *command) {
   if (strcmp(first, "help") == 0) {
     printf("  Available commands:\n");
     printf("    tree - show contents of the whole image\n");
-    printf("    dir/ls - list current directory's contents\n");
+    printf("    ls - list current directory's contents\n");
     printf("    cd <directory> - enter directory\n");
     printf("    pwd - print working directory\n");
     printf("    cat <filename> - print file's contents\n");

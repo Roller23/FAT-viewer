@@ -75,7 +75,7 @@ struct __attribute__((packed)) _BootSector {
   uint32_t serial_number;
   uint8_t volume_label[11];
   uint8_t system_type_level[8];
-  uint8_t pad2[448];
+  uint8_t boot_code[448];
   uint16_t signature_value;
 };
 

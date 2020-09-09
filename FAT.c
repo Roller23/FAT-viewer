@@ -95,6 +95,7 @@ int loadDiskImage(const char *name) {
 
 void initGUI(void) {
   char buffer[BUFFER_SIZE];
+  printf("Type 'help' for a list of available commands\n");
   while (true) {
     memset(buffer, 0, BUFFER_SIZE);
     printf("> ");
@@ -422,29 +423,8 @@ static void printFullDate(uint16_t time, uint16_t date) {
 }
 
 static uint16_t get_fat_entry(uint8_t *FAT, uint16_t index) {
-  uint32_t fat_offset = index + (index / 2);
-  uint16_t entry_value = *(uint16_t *)&FAT[fat_offset];
-  if (index & 0x0001) {
-    entry_value >>= 4;
-    return entry_value;
-  } else {
-    return (entry_value & 0x0fff);
-  }
-}
-
-static void dump(void *data, uint32_t size) {
-  uint8_t *p = (uint8_t *)data;
-  int index = 0;
-  while (1) {
-    for (int i = 0; i < 12; i++) {
-      printf("%.2x ", p[index]);
-      index++;
-    }
-    printf("\n");
-    if (index >= size) {
-      break;
-    }
-  }
+  uint16_t entry_value = *(uint16_t *)&FAT[index + (index / 2)];
+  return (index & 0x0001) ? (entry_value >> 4) : (entry_value & 0x0fff);
 }
 
 static uint32_t countFATentries(FileEntry_t *entry) {
@@ -718,7 +698,7 @@ static void handleCommand(char *command) {
     global_data.directoryHistory[global_data.historyIndex] = directory;
     return;
   }
-  if (strcmp("dir", first) == 0) {
+  if (strcmp("dir", first) == 0 || strcmp("ls", first) == 0) {
     showDirectoryContents(getCurrentDir(), 1, false);
     return;
   }
@@ -733,13 +713,17 @@ static void handleCommand(char *command) {
       return;
     }
     FileEntry_t *entry = handle->_entry;
+    size_t file_size = handle->_size;
     fileClose(handle);
     if (is_directory(entry)) {
       printf("  Cannot read %s because it's a directory.\n", second);
       return;
     }
     uint8_t *contents = getContents(entry);
-    printf("%s\n", contents);
+    for (size_t i = 0; i < file_size; i++) {
+      putchar(contents[i]);
+    }
+    printf("\n");
     free(contents);
     return;
   }
@@ -840,80 +824,22 @@ static void handleCommand(char *command) {
     printf("  Clusters: %u\n", clusters);
     return;
   }
-  if (strcmp("zip", first) == 0) {
-    char *third = strtok(NULL, " ");
-    char *fourth = strtok(NULL, " ");
-    if (!second || !third || !fourth) {
-      printf("  Not enough arguments supplied!\n");
-      return;
-    }
-    File_t *handle1 = fileOpen(second);
-    File_t *handle2 = fileOpen(third);
-    if (!handle1 || !handle2) {
-      printf("  Couldn't find files\n");
-      return;
-    }
-    FileEntry_t *entry1 = handle1->_entry;
-    FileEntry_t *entry2 = handle2->_entry;
-    fileClose(handle1);
-    fileClose(handle2);
-    if (is_directory(entry1) || is_directory(entry2)) {
-      printf("  Cannot zip a directory.\n");
-      return;
-    }
-    FILE *output = fopen(fourth, "w");
-    if (output == NULL) {
-      printf("  Couldn't open %s", fourth);
-      return;
-    }
-    char *content1 = (char *)getContents(entry1);
-    if (content1 == NULL) {
-      printf("  Couldn't read file contents!\n");
-      return;
-    }
-    char *content2 = (char *)getContents(entry2);
-    if (content2 == NULL) {
-      free(content1);
-      printf("  Couldn't read file contents!\n");
-      return;
-    }
-    char *token1 = strsep(&content1, "\n");
-    char *token2 = strsep(&content2, "\n");
-    while (token1 || token2) {
-      if (token1) {
-        fwrite(token1, strlen(token1), 1, output);
-        fwrite("\n", 1, 1, output);
-      }
-      if (token2) {
-        fwrite(token2, strlen(token2), 1, output);
-        fwrite("\n", 1, 1, output);
-      }
-      token1 = strsep(&content1, "\n");
-      token2 = strsep(&content2, "\n");
-    }
-    fclose(output);
-    free(content1);
-    free(content2);
-    printf("  Successfully zipped files.\n");
-    return;
-  }
   if (strcmp(first, "tree") == 0) {
     showDirectoryContents(NULL, 1, true);
     return;
   }
   if (strcmp(first, "help") == 0) {
     printf("  Available commands:\n");
-    printf("    exit - terminates the program\n");
-    printf("    dir - list current directory's files and folders\n");
+    printf("    tree - show contents of the whole image\n");
+    printf("    dir/ls - list current directory's contents\n");
     printf("    cd <directory> - enter directory\n");
     printf("    pwd - print working directory\n");
     printf("    cat <filename> - print file's contents\n");
     printf("    get <filename> - copy file's contents to local folder\n");
-    printf("    zip <filename1> <filename2> <output_name> save files' contents to output\n");
     printf("    rootinfo - print information about the root directory\n");
     printf("    spaceinfo - print information about the disk image\n");
     printf("    fileinfo <filename> - print information about the file\n");
-    printf("    tree - show contents of the whole image\n");
+    printf("    exit - terminates the program\n");
     return;
   }
   printf("  Unknown command '%s', type help for a list of available commands\n", first);

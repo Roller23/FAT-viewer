@@ -100,29 +100,7 @@ struct __attribute__((packed)) _FileEntry {
   uint32_t file_size; // 0 if directory
 };
 
-struct __attribute((packed)) _LongFilenameEntry {
-  uint8_t index; // determines the file name order
-  union {
-    uint8_t byte;
-    uint16_t character;
-  } filename1[5];
-  uint8_t file_attributes; // is always 0x0f
-  uint8_t type; // must be 0
-  uint8_t checksum; // of the SFN entry
-  union {
-    uint8_t byte;
-    uint16_t character;
-  } filename2[6];
-  uint16_t first_cluster_address_low; // must be 0
-  union {
-    uint8_t byte;
-    uint16_t character;
-  } filename3[2];
-  // Long file names are encoded in UTF-16
-  // so there are at least 2 bits per character
-};
-
-struct _FileHandle {
+struct _File_t {
   struct _FileEntry *_entry;
   int _position;
   enum file_type _type;
@@ -143,8 +121,7 @@ struct global_data_t {
 
 typedef struct _FileEntry FileEntry_t;
 typedef struct _BootSector BootSector_t;
-typedef struct _FileHandle File_t;
-typedef struct _LongFilenameEntry LongFile_t;
+typedef struct _File_t File_t;
 
 // internal functions
 

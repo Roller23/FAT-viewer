@@ -581,12 +581,13 @@ static void printIndentation(size_t times) {
   }
 }
 
-static void showDirectoryContents(FileEntry_t *directory, size_t indent, bool recursive) {
+static void showDirectoryContents(FileEntry_t *directory, size_t indent, bool recursive, bool all) {
   FileEntry_t *entries = (FileEntry_t *)getContents(directory);
   if (entries == NULL) {
     printf("  Couldn't read entries cluster!\n");
     return;
   }
+  bool first_shown = false;
   for (size_t i = 0; true; i++) {
     FileEntry_t entry = entries[i];
     if (lastEntry(&entry)) {
@@ -600,20 +601,22 @@ static void showDirectoryContents(FileEntry_t *directory, size_t indent, bool re
       continue;
     }
     printIndentation(indent);
-    printFullDate(entry.creation_time, entry.creation_date);
-    printf("  ");
+    all && (printFullDate(entry.creation_time, entry.creation_date), printf("  "));
     if (is_directory(&entry)) {
-      printf("<DIRECTORY>");
+      printf(CYAN);
+      all && printf("<DIRECTORY>");
     } else {
-      printf("%u bytes", entry.file_size);
+      all && printf("%u bytes", entry.file_size);
     }
-    printf("  ");
+    printf("%s", !first_shown && !all && recursive ? CYAN "  \u21B3 " RESET : "  ");
+    first_shown = true;
     printFilename(&entry);
+    printf(RESET);
     printf("\n");
     if (recursive && is_directory(&entry)) {
       FileEntry_t *subEntries = (FileEntry_t *)getContents(&entry);
       if (subEntries != NULL) {
-        showDirectoryContents(subEntries, indent + 1, true);
+        showDirectoryContents(subEntries, indent + 1, true, all);
       }
     }
   }
@@ -708,7 +711,8 @@ static void handleCommand(char *command) {
     return;
   }
   if (strcmp("ls", first) == 0) {
-    showDirectoryContents(getCurrentDir(), 1, false);
+    bool show_all = second != NULL && strcmp(second, "-a") == 0;
+    showDirectoryContents(getCurrentDir(), 1, false, show_all);
     return;
   }
   if (strcmp("cat", first) == 0) {
@@ -834,13 +838,15 @@ static void handleCommand(char *command) {
     return;
   }
   if (strcmp(first, "tree") == 0) {
-    showDirectoryContents(NULL, 1, true);
+    bool show_all = second != NULL && strcmp(second, "-a") == 0;
+    show_all && printf(CYAN "    root\n" RESET);
+    showDirectoryContents(NULL, 1, true, show_all);
     return;
   }
   if (strcmp(first, "help") == 0) {
     printf("  Available commands:\n");
-    printf("    tree - show contents of the whole image\n");
-    printf("    ls - list current directory's contents\n");
+    printf("    tree - show contents of the whole image. Flags (-a print creation date and size)\n");
+    printf("    ls - list current directory's contents. Flags (-a print creation date and size)\n");
     printf("    cd <directory> - enter directory\n");
     printf("    pwd - print working directory\n");
     printf("    cat <filename> - print file's contents\n");

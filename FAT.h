@@ -142,7 +142,7 @@ static uint32_t countFATentries(FileEntry_t *entry);
 static FileEntry_t *getCurrentDir(void);
 static FileEntry_t *getDirectory(uint32_t index);
 static void printCurrentDirectory(void);
-static void showDirectoryContents(FileEntry_t *directory, size_t indent, bool recursive);
+static void showDirectoryContents(FileEntry_t *directory, size_t indent, bool recursive, bool all);
 static void printIndentation(size_t times);
 static File_t *goAndFetch(char *filename, bool reset_depth);
 static void makeHistoryBackup(void);

@@ -1,15 +1,23 @@
 #include "FAT.h"
-#include <libgen.h>
-#include <unistd.h>
 
-#define CYAN "\033[36m"
-#define GREEN  "\x1B[32m"
-#define RESET "\x1B[0m"
+#ifdef __unix__
+
+  #define CYAN "\033[36m"
+  #define GREEN  "\x1B[32m"
+  #define RESET "\x1B[0m"
+
+#else
+
+  #define CYAN ""
+  #define GREEN  ""
+  #define RESET ""
+
+#endif
 
 static struct global_data_t global_data;
 
 int loadDiskImage(const char *name) {
-  global_data.diskFilename = basename((char *)name);
+  global_data.diskFilename = name;
   FILE *diskFile = fopen(name, "rb");
   if (diskFile == NULL) {
     printf("Couldn't open %s\n", name);
@@ -715,6 +723,38 @@ static void handleCommand(char *command) {
     showDirectoryContents(getCurrentDir(), 1, false, show_all);
     return;
   }
+  // this works but is only temporary
+  // if (strcmp("rm", first) == 0) {
+  //   if (second == NULL) {
+  //     printf("  No argument supplied!\n");
+  //     return;
+  //   }
+  //   File_t *handle = fileOpen(second);
+  //   if (handle == NULL) {
+  //     printf("  %s not found.\n", second);
+  //     return;
+  //   }
+  //   FileEntry_t *entry = handle->_entry;
+  //   fileClose(handle);
+  //   // go through all FAT entries and set to 0
+  //   uint16_t FAT_entry = entry->first_cluster_address_low;
+  //   uint8_t *FAT = global_data.FAT;
+  //   while (true) {
+  //     uint16_t next_FAT_entry = get_fat_entry(FAT, FAT_entry);
+  //     uint16_t *FAT_entry_address = (uint16_t *)(FAT + (FAT_entry + (FAT_entry / 2)));
+  //     if (FAT_entry & 0x0001) {
+  //       *FAT_entry_address &= 0b0000000000001111;
+  //     } else {
+  //       *FAT_entry_address &= 0b1111000000000000;
+  //     }
+  //     FAT_entry = next_FAT_entry;
+  //     if (last_entry(FAT_entry) || bad_entry(FAT_entry)) {
+  //       break;
+  //     }
+  //   }
+  //   entry->allocation_status = DELETED;
+  //   return;
+  // }
   if (strcmp("cat", first) == 0) {
     if (second == NULL) {
       printf("  No argument supplied!\n");
